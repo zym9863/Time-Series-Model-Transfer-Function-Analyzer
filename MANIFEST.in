@@ -1,0 +1,7 @@
+include README.md
+include README_EN.md
+include LICENSE
+include CHANGELOG.md
+recursive-include examples *.json *.yaml *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]

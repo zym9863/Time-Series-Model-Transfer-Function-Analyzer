@@ -12,8 +12,8 @@ from .formatters import OutputFormatter
 from .api import TimeSeriesAnalyzer, analyze_arima, analyze_sarima, parse_and_analyze
 
 __version__ = "0.1.0"
-__author__ = "AI Assistant"
-__email__ = "ai@example.com"
+__author__ = "zym"
+__email__ = "ym214413520@gmail.com"
 
 __all__ = [
     "ARIMAModel",
