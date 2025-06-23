@@ -1,3 +1,5 @@
+[English](README_EN.md) | [中文](README.md)
+
 # 时序模型传递函数分析器
 
 [![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
