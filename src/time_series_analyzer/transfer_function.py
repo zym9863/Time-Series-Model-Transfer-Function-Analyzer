@@ -56,8 +56,7 @@ class TransferFunction:
                     simplify(self.denominator.as_expr() / gcd_poly),
                     self.lag_operator
                 )
-        except Exception:
-            # 如果简化失败，保持原样
+        except Exception:            # 如果简化失败，保持原样
             pass
     
     def evaluate_at_frequency(self, frequency: complex) -> complex:
@@ -70,8 +69,12 @@ class TransferFunction:
         Returns:
             传递函数在该频率处的值
         """
-        num_val = complex(self.numerator.as_expr().subs(self.lag_operator, frequency))
-        den_val = complex(self.denominator.as_expr().subs(self.lag_operator, frequency))
+        num_expr = self.numerator.as_expr().subs(self.lag_operator, frequency)
+        den_expr = self.denominator.as_expr().subs(self.lag_operator, frequency)
+        
+        # 确保结果为数值
+        num_val = complex(num_expr.evalf())
+        den_val = complex(den_expr.evalf())
         
         if abs(den_val) < 1e-12:
             raise ValueError(f"分母在频率{frequency}处为零")
@@ -266,37 +269,44 @@ class TransferFunctionDeriver:
         return {
             "is_stable": is_stable,
             "poles": poles,
-            "zeros": zeros,
-            "pole_magnitudes": pole_magnitudes,
+            "zeros": zeros,            "pole_magnitudes": pole_magnitudes,
             "max_pole_magnitude": max(pole_magnitudes) if pole_magnitudes else 0,
             "stability_margin": 1 - max(pole_magnitudes) if pole_magnitudes else 1
         }
-    
-    def get_frequency_response(self, model, frequencies: list) -> Dict[str, list]:
+
+    def get_frequency_response(self, model, frequencies: list, 
+                             param_values: dict = None) -> Dict[str, list]:
         """
         计算频率响应
         
         Args:
             model: 时间序列模型
             frequencies: 频率列表 (弧度)
+            param_values: 模型参数的数值，格式为 {'phi_1': 0.5, 'theta_1': 0.3, ...}
+                         如果为None，将使用默认值
             
         Returns:
             频率响应数据
         """
+        import math
         transfer_func = self.derive_transfer_function(model)
+        
+        # 如果没有提供参数值，使用默认值
+        if param_values is None:
+            param_values = self._get_default_params(model)
         
         magnitudes = []
         phases = []
         
         for omega in frequencies:
             # 计算 e^{-iω}
-            z = complex(sp.cos(omega), -sp.sin(omega))
+            z = complex(math.cos(omega), -math.sin(omega))
             
             try:
-                response = transfer_func.evaluate_at_frequency(z)
+                response = self._evaluate_with_params(transfer_func, z, param_values)
                 magnitudes.append(abs(response))
-                phases.append(sp.arg(response))
-            except ValueError:
+                phases.append(math.atan2(response.imag, response.real))
+            except (ValueError, TypeError):
                 magnitudes.append(float('inf'))
                 phases.append(0)
         
@@ -304,6 +314,61 @@ class TransferFunctionDeriver:
             "frequencies": frequencies,
             "magnitudes": magnitudes,
             "phases": phases,
-            "magnitude_db": [20 * sp.log(mag, 10) if mag > 0 else -float('inf') 
+            "magnitude_db": [20 * math.log10(mag) if mag > 0 and math.isfinite(mag) else -float('inf') 
                            for mag in magnitudes]
         }
+    
+    def _get_default_params(self, model) -> dict:
+        """获取模型的默认参数值"""
+        params = {}
+        
+        # AR参数：使用稳定值
+        if hasattr(model, 'ar_params') and model.ar_params:
+            for i, param in enumerate(model.ar_params):
+                if isinstance(param, str):
+                    # 为了稳定性，AR参数应该较小
+                    params[param] = 0.1 * (i + 1)
+                    
+        # MA参数：使用适中值
+        if hasattr(model, 'ma_params') and model.ma_params:
+            for i, param in enumerate(model.ma_params):
+                if isinstance(param, str):
+                    params[param] = 0.2 * (i + 1)
+                    
+        # 季节性参数
+        if hasattr(model, 'seasonal_ar_params') and model.seasonal_ar_params:
+            for i, param in enumerate(model.seasonal_ar_params):
+                if isinstance(param, str):
+                    params[param] = 0.05 * (i + 1)
+                    
+        if hasattr(model, 'seasonal_ma_params') and model.seasonal_ma_params:
+            for i, param in enumerate(model.seasonal_ma_params):
+                if isinstance(param, str):
+                    params[param] = 0.1 * (i + 1)
+        
+        return params
+    
+    def _evaluate_with_params(self, transfer_func: TransferFunction, 
+                            frequency: complex, param_values: dict) -> complex:
+        """使用给定参数值计算传递函数在特定频率的值"""
+        # 获取分子和分母表达式
+        num_expr = transfer_func.numerator.as_expr()
+        den_expr = transfer_func.denominator.as_expr()
+        
+        # 替换滞后算子
+        num_expr = num_expr.subs(transfer_func.lag_operator, frequency)
+        den_expr = den_expr.subs(transfer_func.lag_operator, frequency)
+        
+        # 替换参数
+        for param_name, param_value in param_values.items():
+            num_expr = num_expr.subs(symbols(param_name), param_value)
+            den_expr = den_expr.subs(symbols(param_name), param_value)
+        
+        # 计算数值
+        num_val = complex(num_expr.evalf())
+        den_val = complex(den_expr.evalf())
+        
+        if abs(den_val) < 1e-12:
+            raise ValueError(f"分母在频率{frequency}处为零")
+            
+        return num_val / den_val
