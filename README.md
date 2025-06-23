@@ -392,7 +392,6 @@ time-series-model-transfer-function-analyzer/
 
 - 项目主页: https://github.com/zym9863/time-series-model-transfer-function-analyzer
 - 问题反馈: https://github.com/zym9863/time-series-model-transfer-function-analyzer/issues
-- 文档: https://time-series-model-transfer-function-analyzer.readthedocs.io
 
 ---
 

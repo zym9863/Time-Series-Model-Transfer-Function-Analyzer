@@ -50,7 +50,6 @@ tsm-analyzer = "time_series_analyzer.cli:main"
 [project.urls]
 Homepage = "https://github.com/zym9863/time-series-model-transfer-function-analyzer"
 Repository = "https://github.com/zym9863/time-series-model-transfer-function-analyzer"
-Documentation = "https://time-series-model-transfer-function-analyzer.readthedocs.io"
 Issues = "https://github.com/zym9863/time-series-model-transfer-function-analyzer/issues"
 
 [build-system]
