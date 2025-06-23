@@ -1,0 +1,14 @@
+model_type: SARIMA
+p: 2
+d: 1
+q: 1
+P: 1
+D: 1
+Q: 1
+m: 12
+ar_params: [0.5, -0.3]
+ma_params: [0.2]
+seasonal_ar_params: [0.8]
+seasonal_ma_params: [0.4]
+constant: 0
+name: "SARIMA(2,1,1)(1,1,1,12) 示例模型"
