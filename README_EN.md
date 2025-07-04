@@ -47,6 +47,74 @@ uv sync
 
 ## 🎯 Quick Start
 
+### FastAPI Web Service
+
+This project provides a complete FastAPI web service for time series model analysis via HTTP API.
+
+#### Start the Service
+
+```bash
+# Method 1: Use the startup script
+python scripts/start_api.py
+
+# Method 2: Use uvicorn directly
+uvicorn src.api.app:create_app --factory --host 0.0.0.0 --port 8000 --reload
+
+# Method 3: Use convenience script
+# Windows
+scripts/start_api.bat
+
+# Linux/macOS
+chmod +x scripts/start_api.sh
+./scripts/start_api.sh
+```
+
+#### Access API Documentation
+
+After starting the service, visit:
+
+- **API Docs (Swagger UI)**: http://localhost:8000/docs
+- **API Docs (ReDoc)**: http://localhost:8000/redoc
+- **OpenAPI Spec**: http://localhost:8000/openapi.json
+- **Health Check**: http://localhost:8000/api/v1/health
+
+#### API Usage Examples
+
+**1. Health Check**
+```bash
+curl -X GET "http://localhost:8000/api/v1/health"
+```
+
+**2. ARIMA Model Analysis**
+```bash
+curl -X POST "http://localhost:8000/api/v1/analyze/arima" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "p": 2,
+    "d": 1,
+    "q": 1,
+    "ar_params": [0.5, -0.3],
+    "ma_params": [0.2],
+    "include_stability": true
+  }'
+```
+
+**3. Analyze by Model String**
+```bash
+curl -X POST "http://localhost:8000/api/v1/analyze/model-string" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_string": "ARIMA(2,1,1)",
+    "include_stability": true,
+    "include_impulse": true
+  }'
+```
+
+**4. Get Supported Model Types**
+```bash
+curl -X GET "http://localhost:8000/api/v1/models"
+```
+
 ### Command Line Tool
 
 #### Basic Usage
@@ -318,23 +386,39 @@ uv run mypy src
 ### Project Structure
 ```
 time-series-model-transfer-function-analyzer/
-├── src/time_series_analyzer/
-│   ├── __init__.py          # Main API exports
-│   ├── models.py            # ARIMA/SARIMA model definitions
-│   ├── transfer_function.py # Transfer function engine
-│   ├── parsers.py           # Input parsers
-│   ├── formatters.py        # Output formatters
-│   ├── api.py              # High-level API
-│   └── cli.py              # CLI tool
-├── tests/                   # Test suite
-├── examples/               # Example config files
+├── src/
+│   ├── time_series_analyzer/    # Core analysis library
+│   │   ├── __init__.py          # Main API exports
+│   │   ├── models.py            # ARIMA/SARIMA model definitions
+│   │   ├── transfer_function.py # Transfer function engine
+│   │   ├── parsers.py           # Input parsers
+│   │   ├── formatters.py        # Output formatters
+│   │   ├── api.py              # High-level API
+│   │   └── cli.py              # CLI tool
+│   └── api/                     # FastAPI Web service
+│       ├── __init__.py
+│       ├── app.py              # FastAPI app main file
+│       ├── config.py           # Config management
+│       ├── middleware.py       # Middleware
+│       ├── schemas.py          # Request/response models
+│       └── routers/            # API routers
+│           ├── __init__.py
+│           ├── analysis.py     # Analysis service router
+│           ├── health.py       # Health check router
+│           └── models.py       # Model management router
+├── scripts/                     # Startup scripts
+│   ├── start_api.py            # Python startup script
+│   ├── start_api.bat           # Windows batch script
+│   └── start_api.sh            # Linux/macOS script
+├── tests/                       # Test suite
+├── examples/                    # Example config files
 ├── docs/                   # Documentation
 └── pyproject.toml          # Project config
 ```
 
 ## 📚 API Reference
 
-### Core Class
+### Core Classes
 
 #### `TimeSeriesAnalyzer`
 Main analyzer class providing all analysis functions.
@@ -359,6 +443,28 @@ Transfer function representation, includes numerator, denominator polynomials, a
 - `analyze_arima()` - Quick ARIMA analysis
 - `analyze_sarima()` - Quick SARIMA analysis
 - `parse_and_analyze()` - Parse and analyze from string
+
+### FastAPI Endpoints
+
+#### Health Check
+- `GET /api/v1/health` - Service health check
+
+#### Model Management
+- `GET /api/v1/models` - Get supported model types
+- `GET /api/v1/models/validate/{model_string}` - Validate model string
+
+#### Analysis Services
+- `POST /api/v1/analyze/arima` - Analyze ARIMA model
+- `POST /api/v1/analyze/sarima` - Analyze SARIMA model
+- `POST /api/v1/analyze/model-string` - Analyze by model string
+- `GET /api/v1/analyze/transfer-function/{model_string}` - Get transfer function only
+- `GET /api/v1/analyze/stability/{model_string}` - Get stability analysis only
+
+#### Request/Response Format
+
+All API endpoints use JSON for data exchange. For detailed request and response formats, see:
+- **Swagger UI Docs**: http://localhost:8000/docs
+- **ReDoc Docs**: http://localhost:8000/redoc
 
 ## 🤝 Contributing
 
@@ -392,7 +498,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Project Home: https://github.com/zym9863/time-series-model-transfer-function-analyzer
 - Issues: https://github.com/zym9863/time-series-model-transfer-function-analyzer/issues
-- Docs: https://time-series-model-transfer-function-analyzer.readthedocs.io
 
 ---
 
