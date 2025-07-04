@@ -47,6 +47,74 @@ uv sync
 
 ## 🎯 快速开始
 
+### FastAPI Web服务
+
+本项目提供了完整的FastAPI Web服务，支持通过HTTP API进行时间序列模型分析。
+
+#### 启动服务
+
+```bash
+# 方法1：使用启动脚本
+python scripts/start_api.py
+
+# 方法2：直接使用uvicorn
+uvicorn src.api.app:create_app --factory --host 0.0.0.0 --port 8000 --reload
+
+# 方法3：使用便捷脚本
+# Windows
+scripts/start_api.bat
+
+# Linux/macOS
+chmod +x scripts/start_api.sh
+./scripts/start_api.sh
+```
+
+#### 访问API文档
+
+启动服务后，可以通过以下地址访问：
+
+- **API文档 (Swagger UI)**: http://localhost:8000/docs
+- **API文档 (ReDoc)**: http://localhost:8000/redoc
+- **OpenAPI规范**: http://localhost:8000/openapi.json
+- **健康检查**: http://localhost:8000/api/v1/health
+
+#### API使用示例
+
+**1. 健康检查**
+```bash
+curl -X GET "http://localhost:8000/api/v1/health"
+```
+
+**2. ARIMA模型分析**
+```bash
+curl -X POST "http://localhost:8000/api/v1/analyze/arima" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "p": 2,
+    "d": 1,
+    "q": 1,
+    "ar_params": [0.5, -0.3],
+    "ma_params": [0.2],
+    "include_stability": true
+  }'
+```
+
+**3. 通过模型字符串分析**
+```bash
+curl -X POST "http://localhost:8000/api/v1/analyze/model-string" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_string": "ARIMA(2,1,1)",
+    "include_stability": true,
+    "include_impulse": true
+  }'
+```
+
+**4. 获取支持的模型类型**
+```bash
+curl -X GET "http://localhost:8000/api/v1/models"
+```
+
 ### 命令行工具
 
 #### 基本用法
@@ -318,16 +386,32 @@ uv run mypy src
 ### 项目结构
 ```
 time-series-model-transfer-function-analyzer/
-├── src/time_series_analyzer/
-│   ├── __init__.py          # 主要API导出
-│   ├── models.py            # ARIMA/SARIMA模型定义
-│   ├── transfer_function.py # 传递函数推导引擎
-│   ├── parsers.py           # 输入解析器
-│   ├── formatters.py        # 输出格式化器
-│   ├── api.py              # 高级API接口
-│   └── cli.py              # 命令行工具
-├── tests/                   # 测试套件
-├── examples/               # 示例配置文件
+├── src/
+│   ├── time_series_analyzer/    # 核心分析库
+│   │   ├── __init__.py          # 主要API导出
+│   │   ├── models.py            # ARIMA/SARIMA模型定义
+│   │   ├── transfer_function.py # 传递函数推导引擎
+│   │   ├── parsers.py           # 输入解析器
+│   │   ├── formatters.py        # 输出格式化器
+│   │   ├── api.py              # 高级API接口
+│   │   └── cli.py              # 命令行工具
+│   └── api/                     # FastAPI Web服务
+│       ├── __init__.py
+│       ├── app.py              # FastAPI应用主文件
+│       ├── config.py           # 配置管理
+│       ├── middleware.py       # 中间件
+│       ├── schemas.py          # 请求/响应模型
+│       └── routers/            # API路由
+│           ├── __init__.py
+│           ├── analysis.py     # 分析服务路由
+│           ├── health.py       # 健康检查路由
+│           └── models.py       # 模型管理路由
+├── scripts/                     # 启动脚本
+│   ├── start_api.py            # Python启动脚本
+│   ├── start_api.bat           # Windows批处理脚本
+│   └── start_api.sh            # Linux/macOS脚本
+├── tests/                       # 测试套件
+├── examples/                    # 示例配置文件
 ├── docs/                   # 文档
 └── pyproject.toml          # 项目配置
 ```
@@ -359,6 +443,28 @@ time-series-model-transfer-function-analyzer/
 - `analyze_arima()` - 快速分析ARIMA模型
 - `analyze_sarima()` - 快速分析SARIMA模型
 - `parse_and_analyze()` - 从字符串解析并分析
+
+### FastAPI端点
+
+#### 健康检查
+- `GET /api/v1/health` - 服务健康检查
+
+#### 模型管理
+- `GET /api/v1/models` - 获取支持的模型类型
+- `GET /api/v1/models/validate/{model_string}` - 验证模型字符串
+
+#### 分析服务
+- `POST /api/v1/analyze/arima` - 分析ARIMA模型
+- `POST /api/v1/analyze/sarima` - 分析SARIMA模型
+- `POST /api/v1/analyze/model-string` - 通过模型字符串分析
+- `GET /api/v1/analyze/transfer-function/{model_string}` - 仅获取传递函数
+- `GET /api/v1/analyze/stability/{model_string}` - 仅获取稳定性分析
+
+#### 请求/响应格式
+
+所有API端点都使用JSON格式进行数据交换。详细的请求和响应格式请参考：
+- **Swagger UI文档**: http://localhost:8000/docs
+- **ReDoc文档**: http://localhost:8000/redoc
 
 ## 🤝 贡献
 

@@ -103,7 +103,18 @@ class TransferFunction:
         对于离散时间系统，所有极点的模长应小于1
         """
         poles = self.get_poles()
-        return all(abs(pole) < 1 for pole in poles)
+        try:
+            for pole in poles:
+                if hasattr(pole, 'evalf'):
+                    pole_val = complex(pole.evalf())
+                else:
+                    pole_val = complex(pole)
+                if abs(pole_val) >= 1:
+                    return False
+            return True
+        except (TypeError, ValueError):
+            # 如果无法计算数值，返回False（保守估计）
+            return False
     
     def __str__(self) -> str:
         """字符串表示"""
@@ -264,12 +275,24 @@ class TransferFunctionDeriver:
         is_stable = transfer_func.is_stable()
         
         # 计算极点的模长
-        pole_magnitudes = [abs(pole) for pole in poles]
-        
+        pole_magnitudes = []
+        for pole in poles:
+            try:
+                # 尝试转换为复数并计算模长
+                if hasattr(pole, 'evalf'):
+                    pole_val = complex(pole.evalf())
+                else:
+                    pole_val = complex(pole)
+                pole_magnitudes.append(abs(pole_val))
+            except (TypeError, ValueError):
+                # 如果无法转换为数值，跳过该极点
+                continue
+
         return {
             "is_stable": is_stable,
             "poles": poles,
-            "zeros": zeros,            "pole_magnitudes": pole_magnitudes,
+            "zeros": zeros,
+            "pole_magnitudes": pole_magnitudes,
             "max_pole_magnitude": max(pole_magnitudes) if pole_magnitudes else 0,
             "stability_margin": 1 - max(pole_magnitudes) if pole_magnitudes else 1
         }
@@ -321,31 +344,41 @@ class TransferFunctionDeriver:
     def _get_default_params(self, model) -> dict:
         """获取模型的默认参数值"""
         params = {}
-        
-        # AR参数：使用稳定值
+
+        # AR参数
         if hasattr(model, 'ar_params') and model.ar_params:
             for i, param in enumerate(model.ar_params):
                 if isinstance(param, str):
                     # 为了稳定性，AR参数应该较小
                     params[param] = 0.1 * (i + 1)
-                    
-        # MA参数：使用适中值
+                else:
+                    # 如果是数值，使用符号名称
+                    params[f"phi_{i+1}"] = float(param)
+
+        # MA参数
         if hasattr(model, 'ma_params') and model.ma_params:
             for i, param in enumerate(model.ma_params):
                 if isinstance(param, str):
                     params[param] = 0.2 * (i + 1)
-                    
-        # 季节性参数
+                else:
+                    params[f"theta_{i+1}"] = float(param)
+
+        # 季节性AR参数
         if hasattr(model, 'seasonal_ar_params') and model.seasonal_ar_params:
             for i, param in enumerate(model.seasonal_ar_params):
                 if isinstance(param, str):
                     params[param] = 0.05 * (i + 1)
-                    
+                else:
+                    params[f"Phi_{i+1}"] = float(param)
+
+        # 季节性MA参数
         if hasattr(model, 'seasonal_ma_params') and model.seasonal_ma_params:
             for i, param in enumerate(model.seasonal_ma_params):
                 if isinstance(param, str):
                     params[param] = 0.1 * (i + 1)
-        
+                else:
+                    params[f"Theta_{i+1}"] = float(param)
+
         return params
     
     def _evaluate_with_params(self, transfer_func: TransferFunction, 
