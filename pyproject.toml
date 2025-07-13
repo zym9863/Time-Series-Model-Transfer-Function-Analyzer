@@ -1,6 +1,6 @@
 [project]
 name = "time-series-model-transfer-function-analyzer"
-version = "0.1.1"
+version = "0.1.2"
 description = "时序模型传递函数分析器 - 自动推导ARIMA模型的传递函数表达式"
 readme = "README.md"
 requires-python = ">=3.9"
