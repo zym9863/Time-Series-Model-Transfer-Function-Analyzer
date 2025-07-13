@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  time-series-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: time-series-analyzer-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # 可选：添加卷挂载持久化日志
+    # volumes:
+    #   - ./logs:/app/logs
+    
+    # 可选：资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+# 可选：如果需要外部网络
+# networks:
+#   default:
+#     external: true
+#     name: your-network-name

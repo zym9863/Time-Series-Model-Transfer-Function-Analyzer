@@ -1,0 +1,107 @@
+# Git相关文件
+.git/
+.gitignore
+.gitattributes
+
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 测试相关
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# 文档
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 环境变量文件
+.env
+.env.*
+
+# 数据文件
+*.csv
+*.json
+*.xlsx
+*.sqlite
+*.db
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# Docker相关（防止递归复制）
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+deploy.sh
+deploy.bat
+DOCKER_DEPLOYMENT.md
+
+# 部署脚本
+scripts/
+DEPLOYMENT.md
+
+# 示例文件（可选，根据需要决定是否排除）
+examples/
+
+# README和许可证文件保留在镜像中，所以不排除
+# README*.md
+# LICENSE

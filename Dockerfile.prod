@@ -1,0 +1,59 @@
+# 生产环境Dockerfile
+FROM python:3.11-slim as builder
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_CACHE_DIR=/tmp/uv-cache
+
+# 安装系统依赖和uv
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install uv
+
+# 复制项目配置文件
+COPY pyproject.toml uv.lock ./
+
+# 安装依赖
+RUN uv sync --frozen --no-dev
+
+# 生产运行阶段
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+# 只安装运行时必需的系统包
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# 从builder阶段复制虚拟环境
+COPY --from=builder /app/.venv /app/.venv
+
+# 复制应用代码
+COPY src/ src/
+COPY main.py .
+
+# 创建非root用户并设置权限
+RUN groupadd -r appuser && useradd -r -g appuser appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
+# 暴露端口
+EXPOSE 8000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+
+# 生产环境启动命令 - 使用多进程
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker"]

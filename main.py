@@ -5,9 +5,11 @@ FastAPI服务主入口
 import uvicorn
 from src.api.app import create_app
 
+# 创建app实例供uvicorn使用
+app = create_app()
+
 def main():
     """启动FastAPI服务"""
-    app = create_app()
     uvicorn.run(
         app,
         host="0.0.0.0",
